@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Target, Zap, MessageCircle, Calendar, Trophy } from "lucide-react";
@@ -46,8 +47,12 @@ export function LandingPage() {
             StudySync
           </h1>
           <div className="flex items-center gap-4">
-            <Button variant="ghost">Log In</Button>
-            <Button variant="hero" size="lg">Sign Up</Button>
+            <Button variant="ghost" asChild>
+              <Link to="/login">Log In</Link>
+            </Button>
+            <Button variant="hero" size="lg" asChild>
+              <Link to="/signup">Sign Up</Link>
+            </Button>
           </div>
         </div>
       </nav>
@@ -70,8 +75,8 @@ export function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="xl" className="text-lg">
-                Get Started Free
+              <Button variant="hero" size="xl" className="text-lg" asChild>
+                <Link to="/signup">Get Started Free</Link>
               </Button>
               <Button variant="outline" size="xl" className="text-lg">
                 Watch Demo
@@ -149,8 +154,8 @@ export function LandingPage() {
             <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
               Join thousands of students who are already collaborating, learning, and building amazing projects together.
             </p>
-            <Button variant="outline" size="xl" className="bg-primary-foreground text-primary border-0 hover:bg-primary-foreground/90">
-              Sign Up Now - It's Free
+            <Button variant="outline" size="xl" className="bg-primary-foreground text-primary border-0 hover:bg-primary-foreground/90" asChild>
+              <Link to="/signup">Sign Up Now - It's Free</Link>
             </Button>
           </CardContent>
         </Card>

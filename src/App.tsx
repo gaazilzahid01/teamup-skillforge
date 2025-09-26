@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LandingPage } from "./components/LandingPage";
+import { LoginPage } from "./components/LoginPage";
+import { SignupPage } from "./components/SignupPage";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./components/Dashboard";
 import { ProfilePage } from "./components/ProfilePage";
@@ -21,6 +23,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/friends" element={<div className="p-8 text-center text-muted-foreground">Friends page coming soon...</div>} />
