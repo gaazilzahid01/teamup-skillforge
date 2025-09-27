@@ -17,44 +17,11 @@ import {
 } from "lucide-react";
 
 export function ProfilePage() {
-  const skills = [
-    { name: "React", level: "Expert", color: "primary" },
-    { name: "TypeScript", level: "Advanced", color: "secondary" },
-    { name: "Python", level: "Intermediate", color: "success" },
-    { name: "Node.js", level: "Advanced", color: "primary" },
-    { name: "UI/UX Design", level: "Beginner", color: "warning" }
-  ];
-
-  const wantToLearn = [
-    "Machine Learning",
-    "DevOps",
-    "Mobile Development",
-    "Blockchain",
-    "Data Science"
-  ];
-
-  const projects = [
-    {
-      title: "EcoTracker",
-      description: "Carbon footprint tracking app",
-      tech: ["React", "Node.js", "MongoDB"],
-      team: 4,
-      status: "In Progress"
-    },
-    {
-      title: "StudyBuddy AI",
-      description: "AI-powered study companion",
-      tech: ["Python", "TensorFlow", "React"],
-      team: 3,
-      status: "Completed"
-    }
-  ];
-
-  const achievements = [
-    { title: "Hackathon Winner", description: "1st place at TechCrunch Disrupt", date: "Nov 2024" },
-    { title: "Open Source Contributor", description: "50+ contributions to React ecosystem", date: "Ongoing" },
-    { title: "Team Leader", description: "Led 5 successful project teams", date: "2024" }
-  ];
+  // These will come from DB later
+  const skills: any[] = [];
+  const wantToLearn: string[] = [];
+  const projects: any[] = [];
+  const achievements: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -66,19 +33,19 @@ export function ProfilePage() {
             <div className="flex flex-col items-center lg:items-start gap-4">
               <Avatar className="h-32 w-32">
                 <AvatarFallback className="bg-gradient-primary text-primary-foreground text-3xl">
-                  AS
+                  ?
                 </AvatarFallback>
               </Avatar>
               <div className="text-center lg:text-left">
-                <h1 className="text-3xl font-bold">Alex Student</h1>
-                <p className="text-xl text-muted-foreground">Computer Science Major</p>
+                <h1 className="text-3xl font-bold">Your Name</h1>
+                <p className="text-xl text-muted-foreground">Your Title / Major</p>
                 <div className="flex items-center gap-2 mt-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>Stanford University, CA</span>
+                  <span>Your Location / University</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>Graduating May 2025</span>
+                  <span>Graduation Date</span>
                 </div>
               </div>
             </div>
@@ -88,9 +55,7 @@ export function ProfilePage() {
               <div>
                 <h3 className="text-lg font-semibold mb-2">About</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Passionate computer science student with a love for building innovative solutions. 
-                  Experienced in full-stack development and always eager to collaborate on impactful projects. 
-                  Looking to connect with like-minded students for hackathons and learning opportunities.
+                  Add your bio here...
                 </p>
               </div>
 
@@ -139,24 +104,18 @@ export function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {skills.map((skill) => (
-                <div key={skill.name} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{skill.name}</span>
-                    <Badge variant="outline">{skill.level}</Badge>
+              {skills.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center">No skills added yet</p>
+              ) : (
+                skills.map((skill) => (
+                  <div key={skill.name} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{skill.name}</span>
+                      <Badge variant="outline">{skill.level}</Badge>
+                    </div>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full bg-gradient-primary transition-all duration-300`}
-                      style={{ 
-                        width: skill.level === 'Expert' ? '90%' : 
-                               skill.level === 'Advanced' ? '75%' : 
-                               skill.level === 'Intermediate' ? '60%' : '30%' 
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -168,13 +127,17 @@ export function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {wantToLearn.map((skill) => (
-                  <Badge key={skill} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
+              {wantToLearn.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center">No learning goals yet</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {wantToLearn.map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -185,29 +148,33 @@ export function ProfilePage() {
             <CardTitle>Recent Projects</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {projects.map((project) => (
-              <div key={project.title} className="p-4 rounded-lg bg-background/50 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold">{project.title}</h4>
-                    <p className="text-sm text-muted-foreground">{project.description}</p>
-                  </div>
-                  <Badge variant={project.status === 'Completed' ? 'default' : 'secondary'}>
-                    {project.status}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {project.tech.map((tech) => (
-                    <Badge key={tech} variant="outline" className="text-xs">
-                      {tech}
+            {projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center">No projects yet</p>
+            ) : (
+              projects.map((project) => (
+                <div key={project.title} className="p-4 rounded-lg bg-background/50 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold">{project.title}</h4>
+                      <p className="text-sm text-muted-foreground">{project.description}</p>
+                    </div>
+                    <Badge variant={project.status === 'Completed' ? 'default' : 'secondary'}>
+                      {project.status}
                     </Badge>
-                  ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {project.tech?.map((tech: string) => (
+                      <Badge key={tech} variant="outline" className="text-xs">
+                        {tech}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Team of {project.team} members
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Team of {project.team} members
-                </div>
-              </div>
-            ))}
+              ))
+            )}
             <Button variant="outline" className="w-full">
               View All Projects
             </Button>
@@ -223,20 +190,24 @@ export function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {achievements.map((achievement) => (
-              <div key={achievement.title} className="p-4 rounded-lg bg-background/50 space-y-2">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center mt-1">
-                    <Award className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{achievement.title}</h4>
-                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{achievement.date}</p>
+            {achievements.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center">No achievements yet</p>
+            ) : (
+              achievements.map((achievement) => (
+                <div key={achievement.title} className="p-4 rounded-lg bg-background/50 space-y-2">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center mt-1">
+                      <Award className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{achievement.title}</h4>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{achievement.date}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
