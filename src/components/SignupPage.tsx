@@ -1,15 +1,33 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+  university: z.string().min(1, "University is required"),
+  major: z.string().min(1, "Major is required"),
+  graduationYear: z.string().min(1, "Graduation year is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 export function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -21,12 +39,54 @@ export function SignupPage() {
     graduationYear: ""
   });
 
-  const handleSignup = (e: React.FormEvent) => {
+  const { signUp, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual signup logic
-    console.log("Signup attempt:", formData);
-    // For now, redirect to dashboard
-    window.location.href = "/dashboard";
+    setLoading(true);
+    setErrors({});
+
+    try {
+      // Validate form data
+      const validation = signupSchema.safeParse(formData);
+      if (!validation.success) {
+        const fieldErrors: Record<string, string> = {};
+        validation.error.issues.forEach((error) => {
+          if (error.path[0]) {
+            fieldErrors[error.path[0] as string] = error.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setLoading(false);
+        return;
+      }
+
+      const userData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        university: formData.university,
+        major: formData.major,
+        graduation_year: formData.graduationYear,
+      };
+
+      const { error } = await signUp(formData.email, formData.password, userData);
+      
+      if (!error) {
+        // Don't redirect automatically - user needs to confirm email first
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -66,8 +126,12 @@ export function SignupPage() {
                     placeholder="John"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    className={errors.firstName ? "border-destructive" : ""}
                     required
                   />
+                  {errors.firstName && (
+                    <p className="text-sm text-destructive">{errors.firstName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
@@ -76,8 +140,12 @@ export function SignupPage() {
                     placeholder="Doe"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    className={errors.lastName ? "border-destructive" : ""}
                     required
                   />
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive">{errors.lastName}</p>
+                  )}
                 </div>
               </div>
 
@@ -89,14 +157,18 @@ export function SignupPage() {
                   placeholder="john.doe@university.edu"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={errors.email ? "border-destructive" : ""}
                   required
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="university">University</Label>
                 <Select onValueChange={(value) => handleInputChange("university", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.university ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select your university" />
                   </SelectTrigger>
                   <SelectContent>
@@ -108,13 +180,16 @@ export function SignupPage() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.university && (
+                  <p className="text-sm text-destructive">{errors.university}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="major">Major</Label>
                   <Select onValueChange={(value) => handleInputChange("major", value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.major ? "border-destructive" : ""}>
                       <SelectValue placeholder="Your major" />
                     </SelectTrigger>
                     <SelectContent>
@@ -126,11 +201,14 @@ export function SignupPage() {
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.major && (
+                    <p className="text-sm text-destructive">{errors.major}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="graduationYear">Graduation</Label>
                   <Select onValueChange={(value) => handleInputChange("graduationYear", value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.graduationYear ? "border-destructive" : ""}>
                       <SelectValue placeholder="Year" />
                     </SelectTrigger>
                     <SelectContent>
@@ -141,6 +219,9 @@ export function SignupPage() {
                       <SelectItem value="2028">2028</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.graduationYear && (
+                    <p className="text-sm text-destructive">{errors.graduationYear}</p>
+                  )}
                 </div>
               </div>
               
@@ -153,8 +234,12 @@ export function SignupPage() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
+                    className={errors.password ? "border-destructive" : ""}
                     required
                   />
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -180,8 +265,12 @@ export function SignupPage() {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    className={errors.confirmPassword ? "border-destructive" : ""}
                     required
                   />
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -212,8 +301,8 @@ export function SignupPage() {
                 </span>
               </div>
 
-              <Button type="submit" variant="hero" className="w-full" size="lg">
-                Create Account
+              <Button type="submit" variant="hero" className="w-full" size="lg" disabled={loading}>
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 
