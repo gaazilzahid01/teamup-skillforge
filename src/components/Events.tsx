@@ -1,16 +1,103 @@
 // src/components/Events.tsx
 
+"use client"
+
+import { useEffect, useState } from "react"
+import { createClient } from "@supabase/supabase-js"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+
+type Event = {
+  eventid: string
+  name: string
+  description: string
+  date: string
+  location: string
+  skills: string[]
+}
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchEvents() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("events")
+        .select("eventid, name, description, date, location, skills")
+        .order("date", { ascending: true })
+
+      if (error) console.error("Error fetching events:", error)
+      else setEvents(data || [])
+      setLoading(false)
+    }
+
+    fetchEvents()
+  }, [])
+
+  const handleJoin = async (eventId: string) => {
+    // You can later expand this to insert the current user into participants[]
+    alert(`Joined event: ${eventId}`)
+  }
+
   return (
     <div className="flex flex-col p-6 h-full">
-      <Card className="shadow-sm">
+      <Card className="shadow-sm w-full h-full">
         <CardHeader>
           <CardTitle className="text-3xl font-semibold">Events</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Content will go here later */}
+          {loading ? (
+            <p className="text-gray-500">Loading events...</p>
+          ) : events.length === 0 ? (
+            <p className="text-gray-500">No events found.</p>
+          ) : (
+            <ScrollArea className="h-[70vh] pr-4">
+              <div className="flex flex-col gap-4">
+                {events.map((event) => (
+                  <Card key={event.eventid} className="p-4 shadow-sm">
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                      <div>
+                        <h2 className="text-xl font-semibold">{event.name}</h2>
+                        <p className="text-gray-600 text-sm">{event.description}</p>
+                        <p className="text-sm mt-1">
+                          📍 <span className="font-medium">{event.location}</span>
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          🗓️ {new Date(event.date).toLocaleString()}
+                        </p>
+                        {event.skills?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {event.skills.map((skill, i) => (
+                              <span
+                                key={i}
+                                className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => handleJoin(event.eventid)}
+                        className="w-full md:w-auto mt-2 md:mt-0"
+                      >
+                        Join
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
         </CardContent>
       </Card>
     </div>
