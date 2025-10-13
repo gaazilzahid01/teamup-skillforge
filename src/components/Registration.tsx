@@ -1,9 +1,9 @@
 "use client"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/AuthContext" // use your auth context
+import { useAuth } from "@/contexts/AuthContext"
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -12,8 +12,9 @@ const supabase = createClient(
 
 export default function RegistrationPage() {
   const { eventId } = useParams()
-  const { user } = useAuth() // get logged-in user from context
-  const [registered, setRegistered] = useState(false)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [eventName, setEventName] = useState("")
@@ -34,9 +35,6 @@ export default function RegistrationPage() {
         setError("Could not fetch event")
       } else {
         setEventName(data.name)
-        if (data.joined_by_individuals?.includes(user.id)) {
-          setRegistered(true)
-        }
       }
 
       setLoading(false)
@@ -47,26 +45,44 @@ export default function RegistrationPage() {
 
   const handleJoinIndividual = async () => {
     if (!user || !eventId) return
-
     setLoading(true)
-    const { error } = await supabase
+
+    // Fetch current participants first to handle null array
+    const { data: eventData, error: fetchError } = await supabase
       .from("events")
-      .update({
-        joined_by_individuals: supabase.raw(
-          "array_append(joined_by_individuals, ?)",
-          [user.id]
-        ),
-      })
+      .select("joined_by_individuals")
+      .eq("eventid", eventId)
+      .single()
+
+    if (fetchError) {
+      console.error(fetchError)
+      setError("Could not register for event")
+      setLoading(false)
+      return
+    }
+
+    let participants: string[] = eventData.joined_by_individuals || []
+
+    // Prevent duplicate registration
+    if (!participants.includes(user.id)) {
+      participants.push(user.id)
+    }
+
+    const { error: updateError } = await supabase
+      .from("events")
+      .update({ joined_by_individuals: participants })
       .eq("eventid", eventId)
 
-    if (error) {
-      console.error(error)
+    if (updateError) {
+      console.error(updateError)
       setError("Could not register for event")
-    } else {
-      setRegistered(true)
+      setLoading(false)
+      return
     }
 
     setLoading(false)
+    // Navigate back to events page
+    navigate("/events")
   }
 
   if (!user) return <p className="p-6">Please log in to register.</p>
@@ -76,13 +92,10 @@ export default function RegistrationPage() {
   return (
     <div className="flex flex-col p-6">
       <h1 className="text-3xl font-semibold mb-4">Register for {eventName}</h1>
-      {registered ? (
-        <Button disabled>Registered</Button>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <Button onClick={handleJoinIndividual}>Join as Individual</Button>
-        </div>
-      )}
+      <div className="flex flex-col gap-4">
+        <Button onClick={handleJoinIndividual}>Join as Individual</Button>
+        {/* Future: Join as Team */}
+      </div>
     </div>
   )
 }
