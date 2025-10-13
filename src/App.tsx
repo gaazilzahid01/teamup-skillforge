@@ -12,7 +12,7 @@ import { ProfilePage } from "./components/ProfilePage";
 import { TeamsPage } from "./components/TeamsPage";
 import { MessagesPage } from "./components/MessagesPage";
 import { AuthProvider } from "./contexts/AuthContext";
-import {EventsPage} from "./components/Events";
+import EventsPage from "./components/Events"; // ✅ fixed import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,9 +30,16 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/friends" element={<div className="p-8 text-center text-muted-foreground">Friends page coming soon...</div>} />
+              <Route
+                path="/friends"
+                element={
+                  <div className="p-8 text-center text-muted-foreground">
+                    Friends page coming soon...
+                  </div>
+                }
+              />
               <Route path="/teams" element={<TeamsPage />} />
-              <Route path="/events" element={<Events />} />
+              <Route path="/events" element={<EventsPage />} /> {/* ✅ fixed usage */}
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
