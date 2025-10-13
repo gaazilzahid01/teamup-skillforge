@@ -1,6 +1,6 @@
 // src/components/Events.tsx
 "use client"
-
+import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -25,6 +25,10 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const handleJoin = (eventId: string) => {
+    navigate(`/registration/${eventId}`)
+
 
   useEffect(() => {
     async function fetchEvents() {
