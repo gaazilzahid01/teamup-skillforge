@@ -17,6 +17,12 @@ type Event = {
   joined_by_individuals: string[]
 }
 
+type Student = {
+  skills: string[]
+  collegeid: string
+  city: string
+}
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
@@ -26,12 +32,42 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [student, setStudent] = useState<Student | null>(null)
+  const [filter, setFilter] = useState<"all" | "nearMe" | "matchingSkills" | "yetToBegin">("all")
   const navigate = useNavigate()
-  const { user } = useAuth() // get logged-in user
+  const { user } = useAuth()
 
+  // Fetch student details
   useEffect(() => {
     if (!user) return
 
+    async function fetchStudent() {
+      try {
+        const { data, error } = await supabase
+          .from("studentdetails")
+          .select("skills, collegeid")
+          .eq("userid", user.id)
+          .single()
+        if (error) throw error
+
+        const { data: collegeData, error: collegeError } = await supabase
+          .from("colleges")
+          .select("city")
+          .eq("collegeid", data.collegeid)
+          .single()
+        if (collegeError) throw collegeError
+
+        setStudent({ ...data, city: collegeData.city })
+      } catch (err) {
+        console.error("Error fetching student details:", err)
+      }
+    }
+
+    fetchStudent()
+  }, [user])
+
+  // Fetch events
+  useEffect(() => {
     async function fetchEvents() {
       setLoading(true)
       setError(null)
@@ -54,7 +90,7 @@ export default function EventsPage() {
     }
 
     fetchEvents()
-  }, [user])
+  }, [])
 
   const handleJoin = (eventId: string) => {
     navigate(`/registration/${eventId}`)
@@ -64,6 +100,24 @@ export default function EventsPage() {
   if (loading) return <p className="p-6">Loading events...</p>
   if (error) return <p className="p-6 text-red-500">{error}</p>
 
+  // Apply filters
+  const filteredEvents = events.filter(event => {
+    if (!student) return true
+
+    switch (filter) {
+      case "nearMe":
+        return event.location === student.city
+      case "matchingSkills":
+        if (!event.skills || event.skills.length === 0) return false
+        const matchedSkills = event.skills.filter(skill => student.skills.includes(skill))
+        return matchedSkills.length / event.skills.length >= 0.6
+      case "yetToBegin":
+        return new Date(event.date) > new Date()
+      default:
+        return true
+    }
+  })
+
   return (
     <div className="flex flex-col p-6 h-full">
       <Card className="shadow-sm w-full h-full">
@@ -71,12 +125,28 @@ export default function EventsPage() {
           <CardTitle className="text-3xl font-semibold">Events</CardTitle>
         </CardHeader>
         <CardContent>
-          {events.length === 0 ? (
+          {/* Filters */}
+          <div className="flex gap-2 mb-4">
+            <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
+              All
+            </Button>
+            <Button variant={filter === "nearMe" ? "default" : "outline"} onClick={() => setFilter("nearMe")}>
+              Near Me
+            </Button>
+            <Button variant={filter === "matchingSkills" ? "default" : "outline"} onClick={() => setFilter("matchingSkills")}>
+              Matching My Skills
+            </Button>
+            <Button variant={filter === "yetToBegin" ? "default" : "outline"} onClick={() => setFilter("yetToBegin")}>
+              Yet to Begin
+            </Button>
+          </div>
+
+          {filteredEvents.length === 0 ? (
             <p className="text-gray-500">No events found.</p>
           ) : (
-            <ScrollArea className="h-[70vh] pr-4">
+            <ScrollArea className="h-[60vh] pr-4">
               <div className="flex flex-col gap-4">
-                {events.map((event) => {
+                {filteredEvents.map(event => {
                   const registered = event.joined_by_individuals?.includes(user.id)
                   return (
                     <Card key={event.eventid} className="p-4 shadow-sm">
