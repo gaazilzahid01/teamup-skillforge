@@ -1,4 +1,4 @@
-// src/pages/events.tsx
+// src/components/Events.tsx
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -51,4 +51,33 @@ export default function EventsPage() {
     <div className="flex flex-col p-6 h-full">
       <h1 className="text-3xl font-semibold mb-4">Upcoming Events</h1>
       <ScrollArea className="h-[70vh] rounded-md border p-4">
-        <div className="spac
+        <div className="space-y-4">
+          {events.map((event) => (
+            <Card key={event.id} className="shadow-sm hover:shadow-md transition-all">
+              <CardHeader>
+                <CardTitle>{event.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {event.description}
+                </p>
+                <p className="text-sm font-medium">
+                  📅 {event.date}
+                </p>
+                <p className="text-sm mb-4">
+                  📍 {event.location}
+                </p>
+                <Button
+                  onClick={() => handleJoin(event.id)}
+                  variant={event.joined ? "secondary" : "default"}
+                >
+                  {event.joined ? "Joined ✅" : "Join"}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
