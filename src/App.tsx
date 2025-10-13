@@ -12,7 +12,7 @@ import { ProfilePage } from "./components/ProfilePage";
 import { TeamsPage } from "./components/TeamsPage";
 import { MessagesPage } from "./components/MessagesPage";
 import { AuthProvider } from "./contexts/AuthContext";
-import {Events} from "./components/Events";
+import {EventsPage} from "./components/Events";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
