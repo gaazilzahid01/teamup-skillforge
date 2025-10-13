@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      colleges: {
+        Row: {
+          city: string | null
+          collegeid: string
+          name: string
+        }
+        Insert: {
+          city?: string | null
+          collegeid?: string
+          name: string
+        }
+        Update: {
+          city?: string | null
+          collegeid?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          createdat: string | null
+          date: string | null
+          deadline: string | null
+          description: string | null
+          eventid: string
+          location: string | null
+          name: string
+          participants: string[] | null
+          skills: string[] | null
+        }
+        Insert: {
+          createdat?: string | null
+          date?: string | null
+          deadline?: string | null
+          description?: string | null
+          eventid?: string
+          location?: string | null
+          name: string
+          participants?: string[] | null
+          skills?: string[] | null
+        }
+        Update: {
+          createdat?: string | null
+          date?: string | null
+          deadline?: string | null
+          description?: string | null
+          eventid?: string
+          location?: string | null
+          name?: string
+          participants?: string[] | null
+          skills?: string[] | null
+        }
+        Relationships: []
+      }
+      friends: {
+        Row: {
+          createdat: string | null
+          id: string
+          status: string | null
+          userid1: string | null
+          userid2: string | null
+        }
+        Insert: {
+          createdat?: string | null
+          id?: string
+          status?: string | null
+          userid1?: string | null
+          userid2?: string | null
+        }
+        Update: {
+          createdat?: string | null
+          id?: string
+          status?: string | null
+          userid1?: string | null
+          userid2?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friends_userid1_fkey"
+            columns: ["userid1"]
+            isOneToOne: false
+            referencedRelation: "studentdetails"
+            referencedColumns: ["userid"]
+          },
+          {
+            foreignKeyName: "friends_userid2_fkey"
+            columns: ["userid2"]
+            isOneToOne: false
+            referencedRelation: "studentdetails"
+            referencedColumns: ["userid"]
+          },
+        ]
+      }
+      studentdetails: {
+        Row: {
+          collegeid: string | null
+          createdat: string | null
+          name: string
+          skills: string[] | null
+          updatedat: string | null
+          userid: string
+        }
+        Insert: {
+          collegeid?: string | null
+          createdat?: string | null
+          name: string
+          skills?: string[] | null
+          updatedat?: string | null
+          userid?: string
+        }
+        Update: {
+          collegeid?: string | null
+          createdat?: string | null
+          name?: string
+          skills?: string[] | null
+          updatedat?: string | null
+          userid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studentdetails_collegeid_fkey"
+            columns: ["collegeid"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["collegeid"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          createdat: string | null
+          deadline: string | null
+          description: string | null
+          difficulty: string | null
+          location: string | null
+          members: string[] | null
+          name: string
+          neededroles: string[] | null
+          skills: string[] | null
+          tags: string[] | null
+          teamid: string
+          type: string | null
+        }
+        Insert: {
+          createdat?: string | null
+          deadline?: string | null
+          description?: string | null
+          difficulty?: string | null
+          location?: string | null
+          members?: string[] | null
+          name: string
+          neededroles?: string[] | null
+          skills?: string[] | null
+          tags?: string[] | null
+          teamid?: string
+          type?: string | null
+        }
+        Update: {
+          createdat?: string | null
+          deadline?: string | null
+          description?: string | null
+          difficulty?: string | null
+          location?: string | null
+          members?: string[] | null
+          name?: string
+          neededroles?: string[] | null
+          skills?: string[] | null
+          tags?: string[] | null
+          teamid?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
