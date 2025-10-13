@@ -16,17 +16,17 @@ export type Database = {
     Tables: {
       colleges: {
         Row: {
-          city: string | null
+          city: string
           collegeid: string
           name: string
         }
         Insert: {
-          city?: string | null
+          city: string
           collegeid?: string
           name: string
         }
         Update: {
-          city?: string | null
+          city?: string
           collegeid?: string
           name?: string
         }
