@@ -1,5 +1,4 @@
 // src/components/Events.tsx
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -18,33 +17,45 @@ type Event = {
 }
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 )
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchEvents() {
       setLoading(true)
+      setError(null)
+
       const { data, error } = await supabase
         .from("events")
         .select("eventid, name, description, date, location, skills")
         .order("date", { ascending: true })
 
-      if (error) console.error("Error fetching events:", error)
-      else setEvents(data || [])
+      if (error) {
+        console.error("Could not connect to database:", error)
+        setError("Could not connect to the database")
+      } else {
+        setEvents(data || [])
+      }
+
       setLoading(false)
     }
 
     fetchEvents()
   }, [])
 
-  const handleJoin = async (eventId: string) => {
-    // You can later expand this to insert the current user into participants[]
+  const handleJoin = (eventId: string) => {
+    // TODO: add user to participants array later
     alert(`Joined event: ${eventId}`)
+  }
+
+  if (error) {
+    return <p className="text-red-500 p-6">{error}</p>
   }
 
   return (
