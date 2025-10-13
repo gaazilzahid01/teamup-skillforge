@@ -44,7 +44,7 @@ export function LandingPage() {
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            StudySync
+            SkillSwap
           </h1>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
@@ -166,13 +166,13 @@ export function LandingPage() {
         <div className="container mx-auto px-6 py-12">
           <div className="text-center">
             <h3 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              StudySync
+              SkillSwap
             </h3>
             <p className="text-muted-foreground mb-6">
               Empowering student collaboration worldwide.
             </p>
             <div className="text-sm text-muted-foreground">
-              © 2024 StudySync. All rights reserved.
+              © 2024 SkillSwap. All rights reserved.
             </div>
           </div>
         </div>

@@ -78,7 +78,7 @@ export function LoginPage() {
         <Card className="bg-gradient-card border-0 shadow-lg">
           <CardHeader className="text-center space-y-2">
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              StudySync
+              SkillSwap
             </h1>
             <CardTitle className="text-2xl">Welcome back</CardTitle>
             <p className="text-muted-foreground">

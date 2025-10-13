@@ -44,7 +44,7 @@ export function Layout() {
           <Sidebar className="border-r border-border">
             <SidebarHeader className="border-b border-border p-6">
               <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                StudySync
+                SkillSwap
               </h1>
             </SidebarHeader>
             <SidebarContent className="p-4">
