@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   MapPin, 
   Calendar, 
@@ -30,6 +31,7 @@ import { z } from "zod";
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   skills: z.array(z.string()).optional(),
+  collegeid: z.string().uuid().optional(),
 });
 
 export function ProfilePage() {
@@ -38,17 +40,39 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [colleges, setColleges] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     skills: [] as string[],
+    collegeid: "",
   });
   const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     if (user) {
       fetchProfile();
+      fetchColleges();
     }
   }, [user]);
+
+  const fetchColleges = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('colleges')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setColleges(data || []);
+    } catch (error) {
+      console.error('Error fetching colleges:', error);
+      toast({
+        title: "Error",
+        description: "Could not load colleges",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -67,6 +91,7 @@ export function ProfilePage() {
         setFormData({
           name: data.name || "",
           skills: data.skills || [],
+          collegeid: data.collegeid || "",
         });
       }
     } catch (error) {
@@ -99,6 +124,7 @@ export function ProfilePage() {
         userid: user.id,
         name: formData.name,
         skills: formData.skills,
+        collegeid: formData.collegeid || null,
         updatedat: new Date().toISOString(),
       };
 
@@ -217,6 +243,38 @@ export function ProfilePage() {
 
             {/* Bio & Actions */}
             <div className="flex-1 space-y-6">
+              {isEditing && (
+                <div className="space-y-2">
+                  <Label htmlFor="college">College</Label>
+                  <Select
+                    value={formData.collegeid}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, collegeid: value }))}
+                  >
+                    <SelectTrigger id="college" className="w-full">
+                      <SelectValue placeholder="Select your college" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colleges.map((college) => (
+                        <SelectItem key={college.collegeid} value={college.collegeid}>
+                          {college.name} - {college.city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {!isEditing && profile?.collegeid && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">College</h3>
+                  <p className="text-muted-foreground">
+                    {colleges.find(c => c.collegeid === profile.collegeid)?.name || "Loading..."}
+                    {colleges.find(c => c.collegeid === profile.collegeid)?.city && 
+                      ` - ${colleges.find(c => c.collegeid === profile.collegeid)?.city}`}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-lg font-semibold mb-2">Skills</h3>
                 {isEditing ? (
