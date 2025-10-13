@@ -1,4 +1,3 @@
-// src/components/Events.tsx
 "use client"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
@@ -26,10 +25,13 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+
+  // Navigate to registration page
   const handleJoin = (eventId: string) => {
     navigate(`/registration/${eventId}`)
+  }
 
-
+  // Fetch events from Supabase
   useEffect(() => {
     async function fetchEvents() {
       setLoading(true)
@@ -52,11 +54,6 @@ export default function EventsPage() {
 
     fetchEvents()
   }, [])
-
-  const handleJoin = (eventId: string) => {
-    // TODO: add user to participants array later
-    alert(`Joined event: ${eventId}`)
-  }
 
   if (error) {
     return <p className="text-red-500 p-6">{error}</p>
