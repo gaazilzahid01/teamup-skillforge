@@ -1,7 +1,6 @@
 // src/components/Registration.tsx
 "use client"
-
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
@@ -12,66 +11,79 @@ const supabase = createClient(
 )
 
 export default function RegistrationPage() {
-  const { eventId } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
-  const [userId, setUserId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const { eventId } = useParams() // from route /registration/:eventId
+  const [registered, setRegistered] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [eventName, setEventName] = useState("")
 
-  // Fetch the logged-in user's ID from StudentDetails
+  const userId = supabase.auth.user()?.id // logged-in user
+
   useEffect(() => {
-    async function fetchUser() {
+    if (!eventId) return
+    async function fetchEvent() {
+      setLoading(true)
       const { data, error } = await supabase
-        .from("studentdetails")
-        .select("userid")
-        .single() // assumes one row per logged-in user
+        .from("events")
+        .select("name, joined_by_individuals")
+        .eq("eventid", eventId)
+        .single()
+
       if (error) {
         console.error(error)
-        setError("Could not fetch user data")
-      } else if (data) {
-        setUserId(data.userid)
+        setError("Could not fetch event")
+      } else {
+        setEventName(data.name)
+        if (userId && data.joined_by_individuals?.includes(userId)) {
+          setRegistered(true)
+        }
       }
+      setLoading(false)
     }
-    fetchUser()
-  }, [])
 
-  const joinAsIndividual = async () => {
-    if (!userId) return
+    fetchEvent()
+  }, [eventId, userId])
+
+  const handleJoinIndividual = async () => {
+    if (!userId || !eventId) return
+
     setLoading(true)
+    // Append userId to joined_by_individuals array
     const { error } = await supabase
       .from("events")
       .update({
-        joined_by_individuals: supabase.raw(`array_append(joined_by_individuals, '${userId}')`)
+        joined_by_individuals: supabase.raw(
+          "array_append(joined_by_individuals, ?)",
+          [userId]
+        ),
       })
       .eq("eventid", eventId)
 
     if (error) {
-      console.error(error)
-      setError("Could not update event")
+      console.error("Failed to join event:", error)
+      setError("Could not register for event")
     } else {
-      navigate("/dashboard") // redirect after joining
+      setRegistered(true)
     }
+
     setLoading(false)
   }
 
-  const joinAsTeam = () => {
-    alert("Team registration not implemented yet")
-  }
-
+  if (loading) return <p className="p-6">Loading...</p>
   if (error) return <p className="p-6 text-red-500">{error}</p>
 
   return (
-    <div className="flex flex-col p-6 gap-4">
-      <h1 className="text-3xl font-semibold">Join Event</h1>
-      <p>Do you want to join as an individual or as a team?</p>
-      <div className="flex gap-4 mt-4">
-        <Button onClick={joinAsIndividual} disabled={loading}>
-          Join as Individual
-        </Button>
-        <Button onClick={joinAsTeam} disabled={loading}>
-          Join as Team
-        </Button>
-      </div>
+    <div className="flex flex-col p-6">
+      <h1 className="text-3xl font-semibold mb-4">Register for {eventName}</h1>
+
+      {registered ? (
+        <Button disabled>Registered</Button>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Button onClick={handleJoinIndividual}>Join as Individual</Button>
+          {/* Future: add Join as Team */}
+        </div>
+      )}
     </div>
   )
 }
