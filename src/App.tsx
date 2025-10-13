@@ -14,6 +14,8 @@ import { MessagesPage } from "./components/MessagesPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import EventsPage from "./components/Events"; // ✅ fixed import
 import NotFound from "./pages/NotFound";
+import RegistrationPage from "./components/Registration"
+
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/events" element={<EventsPage />} /> {/* ✅ fixed usage */}
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/registration/:eventId" element={<RegistrationPage />} />
+
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
