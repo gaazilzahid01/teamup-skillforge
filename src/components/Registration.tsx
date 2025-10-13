@@ -1,9 +1,9 @@
-// src/components/Registration.tsx
 "use client"
 import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/AuthContext" // use your auth context
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -11,16 +11,16 @@ const supabase = createClient(
 )
 
 export default function RegistrationPage() {
-  const { eventId } = useParams() // from route /registration/:eventId
+  const { eventId } = useParams()
+  const { user } = useAuth() // get logged-in user from context
   const [registered, setRegistered] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [eventName, setEventName] = useState("")
 
-  const userId = supabase.auth.user()?.id // logged-in user
-
   useEffect(() => {
-    if (!eventId) return
+    if (!eventId || !user) return
+
     async function fetchEvent() {
       setLoading(true)
       const { data, error } = await supabase
@@ -34,33 +34,33 @@ export default function RegistrationPage() {
         setError("Could not fetch event")
       } else {
         setEventName(data.name)
-        if (userId && data.joined_by_individuals?.includes(userId)) {
+        if (data.joined_by_individuals?.includes(user.id)) {
           setRegistered(true)
         }
       }
+
       setLoading(false)
     }
 
     fetchEvent()
-  }, [eventId, userId])
+  }, [eventId, user])
 
   const handleJoinIndividual = async () => {
-    if (!userId || !eventId) return
+    if (!user || !eventId) return
 
     setLoading(true)
-    // Append userId to joined_by_individuals array
     const { error } = await supabase
       .from("events")
       .update({
         joined_by_individuals: supabase.raw(
           "array_append(joined_by_individuals, ?)",
-          [userId]
+          [user.id]
         ),
       })
       .eq("eventid", eventId)
 
     if (error) {
-      console.error("Failed to join event:", error)
+      console.error(error)
       setError("Could not register for event")
     } else {
       setRegistered(true)
@@ -69,19 +69,18 @@ export default function RegistrationPage() {
     setLoading(false)
   }
 
+  if (!user) return <p className="p-6">Please log in to register.</p>
   if (loading) return <p className="p-6">Loading...</p>
   if (error) return <p className="p-6 text-red-500">{error}</p>
 
   return (
     <div className="flex flex-col p-6">
       <h1 className="text-3xl font-semibold mb-4">Register for {eventName}</h1>
-
       {registered ? (
         <Button disabled>Registered</Button>
       ) : (
         <div className="flex flex-col gap-4">
           <Button onClick={handleJoinIndividual}>Join as Individual</Button>
-          {/* Future: add Join as Team */}
         </div>
       )}
     </div>
