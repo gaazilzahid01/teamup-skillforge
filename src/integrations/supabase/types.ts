@@ -39,9 +39,10 @@ export type Database = {
           deadline: string | null
           description: string | null
           eventid: string
+          joined_by_individuals: string[] | null
+          joined_by_teams: string[] | null
           location: string | null
           name: string
-          participants: string[] | null
           skills: string[] | null
         }
         Insert: {
@@ -50,9 +51,10 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           eventid?: string
+          joined_by_individuals?: string[] | null
+          joined_by_teams?: string[] | null
           location?: string | null
           name: string
-          participants?: string[] | null
           skills?: string[] | null
         }
         Update: {
@@ -61,9 +63,10 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           eventid?: string
+          joined_by_individuals?: string[] | null
+          joined_by_teams?: string[] | null
           location?: string | null
           name?: string
-          participants?: string[] | null
           skills?: string[] | null
         }
         Relationships: []
@@ -144,10 +147,12 @@ export type Database = {
       }
       teams: {
         Row: {
+          created_by: string | null
           createdat: string | null
           deadline: string | null
           description: string | null
           difficulty: string | null
+          event_id: string | null
           location: string | null
           members: string[] | null
           name: string
@@ -158,10 +163,12 @@ export type Database = {
           type: string | null
         }
         Insert: {
+          created_by?: string | null
           createdat?: string | null
           deadline?: string | null
           description?: string | null
           difficulty?: string | null
+          event_id?: string | null
           location?: string | null
           members?: string[] | null
           name: string
@@ -172,10 +179,12 @@ export type Database = {
           type?: string | null
         }
         Update: {
+          created_by?: string | null
           createdat?: string | null
           deadline?: string | null
           description?: string | null
           difficulty?: string | null
+          event_id?: string | null
           location?: string | null
           members?: string[] | null
           name?: string
@@ -185,7 +194,15 @@ export type Database = {
           teamid?: string
           type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["eventid"]
+          },
+        ]
       }
     }
     Views: {
