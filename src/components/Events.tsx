@@ -15,8 +15,8 @@ type Event = {
   date: string
   location: string
   skills: string[]
-  joined_by_individuals: string[] | null
-  joined_by_team: string[] | null
+  joined_by_individuals: string[]
+  joined_by_teams: string[]
 }
 
 const supabase = createClient(
@@ -25,24 +25,28 @@ const supabase = createClient(
 )
 
 export default function EventsPage() {
+  const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { user } = useAuth()
 
-  const fetchEvents = async () => {
+  async function fetchEvents() {
     setLoading(true)
+    setError(null)
+
     const { data, error } = await supabase
       .from("events")
-      .select("*")
+      .select("eventid, name, description, date, location, skills, joined_by_individuals, joined_by_teams")
       .order("date", { ascending: true })
+
     if (error) {
-      console.error(error)
+      console.error("Error fetching events:", error)
       setError("Could not connect to the database")
     } else {
       setEvents(data || [])
     }
+
     setLoading(false)
   }
 
@@ -50,15 +54,7 @@ export default function EventsPage() {
     fetchEvents()
   }, [])
 
-  const hasJoined = (event: Event) => {
-    if (!user) return false
-    const uid = user.id
-    return (
-      event.joined_by_individuals?.includes(uid) ||
-      event.joined_by_team?.includes(uid)
-    )
-  }
-
+  // 🔹 Handle join button click
   const handleJoin = (eventId: string) => {
     navigate(`/registration/${eventId}`, { state: { onJoin: fetchEvents } })
   }
@@ -83,36 +79,41 @@ export default function EventsPage() {
           ) : (
             <ScrollArea className="h-[70vh] pr-4">
               <div className="flex flex-col gap-4">
-                {events.map((event) => (
-                  <Card key={event.eventid} className="p-4 shadow-sm">
-                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-                      <div>
-                        <h2 className="text-xl font-semibold">{event.name}</h2>
-                        <p className="text-gray-600 text-sm">{event.description}</p>
-                        <p className="text-sm mt-1">
-                          📍 <span className="font-medium">{event.location}</span>
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          🗓️ {new Date(event.date).toLocaleString()}
-                        </p>
-                        {event.skills?.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {event.skills.map((skill, i) => (
-                              <span
-                                key={i}
-                                className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        {user && hasJoined(event) ? (
+                {events.map((event) => {
+                  const isJoined =
+                    (event.joined_by_individuals?.includes(user?.id) ||
+                      event.joined_by_teams?.some((team) => team === user?.id)) ?? false
+
+                  return (
+                    <Card key={event.eventid} className="p-4 shadow-sm">
+                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                        <div>
+                          <h2 className="text-xl font-semibold">{event.name}</h2>
+                          <p className="text-gray-600 text-sm">{event.description}</p>
+                          <p className="text-sm mt-1">
+                            📍 <span className="font-medium">{event.location}</span>
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            🗓️ {new Date(event.date).toLocaleString()}
+                          </p>
+                          {event.skills?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {event.skills.map((skill, i) => (
+                                <span
+                                  key={i}
+                                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {isJoined ? (
                           <Button
                             onClick={() => handleView(event.eventid)}
-                            className="w-full md:w-auto mt-2 md:mt-0"
+                            variant="outline"
+                            className="w-full md:w-auto mt-2 md:mt-0 cursor-default"
                           >
                             View
                           </Button>
@@ -125,9 +126,9 @@ export default function EventsPage() {
                           </Button>
                         )}
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             </ScrollArea>
           )}
