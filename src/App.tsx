@@ -16,6 +16,9 @@ import EventsPage from "./components/Events"; // ✅ fixed import
 import NotFound from "./pages/NotFound";
 import RegistrationPage from "./components/Registration"
 import TeamRegisterPage from "./components/TeamRegister"
+import CreateTeamPage from "./components/CreateTeam"
+import JoinTeamPage from "./components/JoinTeam"
+
 
 
 const queryClient = new QueryClient();
@@ -47,6 +50,9 @@ const App = () => (
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/registration/:eventId" element={<RegistrationPage />} />
               <Route path="/teamregister/:eventId" element={<TeamRegisterPage />} />
+              <Route path="/createteam/:eventId" element={<CreateTeamPage />} />
+              <Route path="/jointeam/:eventId" element={<JoinTeamPage />} />
+
 
 
             </Route>
