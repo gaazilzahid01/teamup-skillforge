@@ -31,26 +31,22 @@ export default function EventsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  useEffect(() => {
-    async function fetchEvents() {
-      setLoading(true)
-      setError(null)
-
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("date", { ascending: true })
-
-      if (error) {
-        console.error("Could not connect to database:", error)
-        setError("Could not connect to the database")
-      } else {
-        setEvents(data || [])
-      }
-
-      setLoading(false)
+  const fetchEvents = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true })
+    if (error) {
+      console.error(error)
+      setError("Could not connect to the database")
+    } else {
+      setEvents(data || [])
     }
+    setLoading(false)
+  }
 
+  useEffect(() => {
     fetchEvents()
   }, [])
 
@@ -64,7 +60,7 @@ export default function EventsPage() {
   }
 
   const handleJoin = (eventId: string) => {
-    navigate(`/registration/${eventId}`)
+    navigate(`/registration/${eventId}`, { state: { onJoin: fetchEvents } })
   }
 
   const handleView = (eventId: string) => {
