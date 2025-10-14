@@ -1,3 +1,4 @@
+// src/components/Events.tsx
 "use client"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
@@ -17,56 +18,18 @@ type Event = {
   joined_by_individuals: string[]
 }
 
-type Student = {
-  skills: string[]
-  collegeid: string
-  city: string
-}
-
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 )
 
 export default function EventsPage() {
+  const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [student, setStudent] = useState<Student | null>(null)
-  const [filter, setFilter] = useState<"all" | "nearMe" | "matchingSkills" | "yetToBegin">("all")
   const navigate = useNavigate()
-  const { user } = useAuth()
 
-  // Fetch student details
-  useEffect(() => {
-    if (!user) return
-
-    async function fetchStudent() {
-      try {
-        const { data, error } = await supabase
-          .from("studentdetails")
-          .select("skills, collegeid")
-          .eq("userid", user.id)
-          .single()
-        if (error) throw error
-
-        const { data: collegeData, error: collegeError } = await supabase
-          .from("colleges")
-          .select("city")
-          .eq("collegeid", data.collegeid)
-          .single()
-        if (collegeError) throw collegeError
-
-        setStudent({ ...data, city: collegeData.city })
-      } catch (err) {
-        console.error("Error fetching student details:", err)
-      }
-    }
-
-    fetchStudent()
-  }, [user])
-
-  // Fetch events
   useEffect(() => {
     async function fetchEvents() {
       setLoading(true)
@@ -74,9 +37,7 @@ export default function EventsPage() {
 
       const { data, error } = await supabase
         .from("events")
-        .select(
-          "eventid, name, description, date, location, skills, joined_by_individuals"
-        )
+        .select("*")
         .order("date", { ascending: true })
 
       if (error) {
@@ -92,31 +53,23 @@ export default function EventsPage() {
     fetchEvents()
   }, [])
 
+  // Check if current user has joined the event
+  const joinedByUser = (event: Event) => {
+    if (!user) return false
+    return event.joined_by_individuals?.includes(user.id)
+  }
+
   const handleJoin = (eventId: string) => {
     navigate(`/registration/${eventId}`)
   }
 
-  if (!user) return <p className="p-6">Please log in to see events.</p>
-  if (loading) return <p className="p-6">Loading events...</p>
-  if (error) return <p className="p-6 text-red-500">{error}</p>
+  const handleView = (eventId: string) => {
+    navigate(`/view/${eventId}`)
+  }
 
-  // Apply filters
-  const filteredEvents = events.filter(event => {
-    if (!student) return true
-
-    switch (filter) {
-      case "nearMe":
-        return event.location === student.city
-      case "matchingSkills":
-        if (!event.skills || event.skills.length === 0) return false
-        const matchedSkills = event.skills.filter(skill => student.skills.includes(skill))
-        return matchedSkills.length / event.skills.length >= 0.6
-      case "yetToBegin":
-        return new Date(event.date) > new Date()
-      default:
-        return true
-    }
-  })
+  if (error) {
+    return <p className="text-red-500 p-6">{error}</p>
+  }
 
   return (
     <div className="flex flex-col p-6 h-full">
@@ -125,65 +78,56 @@ export default function EventsPage() {
           <CardTitle className="text-3xl font-semibold">Events</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
-          <div className="flex gap-2 mb-4">
-            <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
-              All
-            </Button>
-            <Button variant={filter === "nearMe" ? "default" : "outline"} onClick={() => setFilter("nearMe")}>
-              Near Me
-            </Button>
-            <Button variant={filter === "matchingSkills" ? "default" : "outline"} onClick={() => setFilter("matchingSkills")}>
-              Matching My Skills
-            </Button>
-            <Button variant={filter === "yetToBegin" ? "default" : "outline"} onClick={() => setFilter("yetToBegin")}>
-              Yet to Begin
-            </Button>
-          </div>
-
-          {filteredEvents.length === 0 ? (
+          {loading ? (
+            <p className="text-gray-500">Loading events...</p>
+          ) : events.length === 0 ? (
             <p className="text-gray-500">No events found.</p>
           ) : (
-            <ScrollArea className="h-[60vh] pr-4">
+            <ScrollArea className="h-[70vh] pr-4">
               <div className="flex flex-col gap-4">
-                {filteredEvents.map(event => {
-                  const registered = event.joined_by_individuals?.includes(user.id)
-                  return (
-                    <Card key={event.eventid} className="p-4 shadow-sm">
-                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-                        <div>
-                          <h2 className="text-xl font-semibold">{event.name}</h2>
-                          <p className="text-gray-600 text-sm">{event.description}</p>
-                          <p className="text-sm mt-1">
-                            📍 <span className="font-medium">{event.location}</span>
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            🗓️ {new Date(event.date).toLocaleString()}
-                          </p>
-                          {event.skills?.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {event.skills.map((skill, i) => (
-                                <span
-                                  key={i}
-                                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-                                >
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                {events.map((event) => (
+                  <Card key={event.eventid} className="p-4 shadow-sm">
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                      <div>
+                        <h2 className="text-xl font-semibold">{event.name}</h2>
+                        <p className="text-gray-600 text-sm">{event.description}</p>
+                        <p className="text-sm mt-1">
+                          📍 <span className="font-medium">{event.location}</span>
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          🗓️ {new Date(event.date).toLocaleString()}
+                        </p>
+                        {event.skills?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {event.skills.map((skill, i) => (
+                              <span
+                                key={i}
+                                className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {joinedByUser(event) ? (
+                        <Button
+                          onClick={() => handleView(event.eventid)}
+                          className="w-full md:w-auto mt-2 md:mt-0"
+                        >
+                          View
+                        </Button>
+                      ) : (
                         <Button
                           onClick={() => handleJoin(event.eventid)}
                           className="w-full md:w-auto mt-2 md:mt-0"
-                          disabled={registered}
                         >
-                          {registered ? "Registered" : "Join"}
+                          Join
                         </Button>
-                      </div>
-                    </Card>
-                  )
-                })}
+                      )}
+                    </div>
+                  </Card>
+                ))}
               </div>
             </ScrollArea>
           )}
