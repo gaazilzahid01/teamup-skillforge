@@ -1,7 +1,8 @@
 "use client"
 import { useParams, useNavigate } from "react-router-dom"
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@supabase/supabase-js"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -14,40 +15,26 @@ export default function RegistrationPage() {
   const { eventId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [event, setEvent] = useState<any>(null)
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [eventName, setEventName] = useState("")
-
+  // Fetch event details
   useEffect(() => {
-    if (!eventId || !user) return
-
     async function fetchEvent() {
-      setLoading(true)
       const { data, error } = await supabase
         .from("events")
-        .select("name, joined_by_individuals")
+        .select("*")
         .eq("eventid", eventId)
         .single()
-
-      if (error) {
-        console.error(error)
-        setError("Could not fetch event")
-      } else {
-        setEventName(data.name)
-      }
-
-      setLoading(false)
+      if (!error) setEvent(data)
     }
-
     fetchEvent()
-  }, [eventId, user])
+  }, [eventId])
 
-  const handleJoinIndividual = async () => {
+  const handleJoinAsIndividual = async () => {
     if (!user || !eventId) return
     setLoading(true)
 
-    // Fetch current participants first to handle null array
     const { data: eventData, error: fetchError } = await supabase
       .from("events")
       .select("joined_by_individuals")
@@ -56,46 +43,66 @@ export default function RegistrationPage() {
 
     if (fetchError) {
       console.error(fetchError)
-      setError("Could not register for event")
       setLoading(false)
       return
     }
 
-    let participants: string[] = eventData.joined_by_individuals || []
-
-    // Prevent duplicate registration
-    if (!participants.includes(user.id)) {
-      participants.push(user.id)
-    }
+    const updatedList = Array.isArray(eventData.joined_by_individuals)
+      ? [...new Set([...eventData.joined_by_individuals, user.id])]
+      : [user.id]
 
     const { error: updateError } = await supabase
       .from("events")
-      .update({ joined_by_individuals: participants })
+      .update({ joined_by_individuals: updatedList })
       .eq("eventid", eventId)
 
-    if (updateError) {
-      console.error(updateError)
-      setError("Could not register for event")
-      setLoading(false)
-      return
-    }
+    if (updateError) console.error(updateError)
 
     setLoading(false)
-    // Navigate back to events page
     navigate("/events")
   }
 
-  if (!user) return <p className="p-6">Please log in to register.</p>
-  if (loading) return <p className="p-6">Loading...</p>
-  if (error) return <p className="p-6 text-red-500">{error}</p>
+  const handleJoinAsTeam = () => {
+    navigate(`/teamregister/${eventId}`)
+  }
+
+  if (!event)
+    return <p className="p-6 text-gray-500">Loading event details...</p>
 
   return (
-    <div className="flex flex-col p-6">
-      <h1 className="text-3xl font-semibold mb-4">Register for {eventName}</h1>
-      <div className="flex flex-col gap-4">
-        <Button onClick={handleJoinIndividual}>Join as Individual</Button>
-        {/* Future: Join as Team */}
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <Card className="w-full max-w-md shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-center">
+            Register for {event.name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Button
+            disabled={loading}
+            onClick={handleJoinAsIndividual}
+            className="w-full"
+          >
+            {loading ? "Registering..." : "Join as Individual"}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleJoinAsTeam}
+            className="w-full"
+          >
+            Join as Team
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/events")}
+            className="w-full text-gray-500 mt-2"
+          >
+            Back to Events
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }
