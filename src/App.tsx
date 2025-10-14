@@ -15,6 +15,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import EventsPage from "./components/Events"; // ✅ fixed import
 import NotFound from "./pages/NotFound";
 import RegistrationPage from "./components/Registration"
+import TeamRegisterPage from "./components/TeamRegister"
 
 
 const queryClient = new QueryClient();
@@ -45,6 +46,8 @@ const App = () => (
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/registration/:eventId" element={<RegistrationPage />} />
+              <Route path="/teamregister/:eventId" element={<TeamRegisterPage />} />
+
 
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
