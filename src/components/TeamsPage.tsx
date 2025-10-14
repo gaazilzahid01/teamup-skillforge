@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Search, 
   MapPin,
@@ -12,10 +15,49 @@ import {
   Plus
 } from "lucide-react";
 
+type Team = {
+  teamid: string;
+  name: string;
+  description: string | null;
+  type: string | null;
+  difficulty: string | null;
+  members: string[] | null;
+  neededroles: string[] | null;
+  skills: string[] | null;
+  location: string | null;
+  deadline: string | null;
+  tags: string[] | null;
+  created_by: string | null;
+  event_id: string | null;
+};
+
 export function TeamsPage() {
-  // Empty arrays for now — will fetch from DB later
-  const teams: any[] = [];
-  const events: any[] = [];
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  async function fetchTeams() {
+    setLoading(true);
+    setError(null);
+
+    const { data, error } = await supabase
+      .from("teams")
+      .select("*")
+      .order("createdat", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching teams:", error);
+      setError("Could not load teams");
+    } else {
+      setTeams(data || []);
+    }
+
+    setLoading(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -63,21 +105,28 @@ export function TeamsPage() {
       {/* Teams Section */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Available Teams</h2>
-        {teams.length === 0 ? (
+        {loading ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            Loading teams...
+          </p>
+        ) : error ? (
+          <p className="text-sm text-red-500 text-center py-6">{error}</p>
+        ) : teams.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             No teams available right now
           </p>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-6">
+          <ScrollArea className="h-[70vh]">
+            <div className="grid lg:grid-cols-2 gap-6 pr-4">
             {teams.map((team) => (
-              <Card key={team.id} className="bg-gradient-card border-0 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+              <Card key={team.teamid} className="bg-gradient-card border-0 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{team.name}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline">{team.type}</Badge>
-                        <Badge variant="secondary">{team.difficulty}</Badge>
+                        {team.type && <Badge variant="outline">{team.type}</Badge>}
+                        {team.difficulty && <Badge variant="secondary">{team.difficulty}</Badge>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
@@ -87,71 +136,81 @@ export function TeamsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">{team.description}</p>
+                  {team.description && (
+                    <p className="text-muted-foreground">{team.description}</p>
+                  )}
 
                   {/* Team Members */}
-                  <div>
-                    <p className="text-sm font-medium mb-2">Team Members ({team.members.length})</p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {team.members.map((member: any) => (
-                          <Avatar key={member.name} className="h-8 w-8 border-2 border-background">
-                            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
-                              {member.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
+                  {team.members && team.members.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Team Members ({team.members.length})</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {team.members.length} member{team.members.length !== 1 ? 's' : ''}
+                          {team.neededroles && team.neededroles.length > 0 && 
+                            ` · ${team.neededroles.length} role${team.neededroles.length !== 1 ? 's' : ''} needed`
+                          }
+                        </span>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        +{team.neededRoles.length} more needed
-                      </span>
                     </div>
-                  </div>
+                  )}
 
                   {/* Needed Roles */}
-                  <div>
-                    <p className="text-sm font-medium mb-2">Looking for:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {team.neededRoles.map((role: string) => (
-                        <Badge key={role} variant="outline" className="text-xs">
-                          {role}
-                        </Badge>
-                      ))}
+                  {team.neededroles && team.neededroles.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Looking for:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {team.neededroles.map((role: string, idx: number) => (
+                          <Badge key={`${role}-${idx}`} variant="outline" className="text-xs">
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Skills */}
-                  <div>
-                    <p className="text-sm font-medium mb-2">Tech Stack:</p>
+                  {team.skills && team.skills.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Tech Stack:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {team.skills.map((skill: string, idx: number) => (
+                          <Badge key={`${skill}-${idx}`} variant="secondary" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Details */}
+                  {(team.location || team.deadline) && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      {team.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {team.location}
+                        </div>
+                      )}
+                      {team.deadline && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          Due {new Date(team.deadline).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {team.tags && team.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {team.skills.map((skill: string) => (
-                        <Badge key={skill} variant="secondary" className="text-xs">
-                          {skill}
+                      {team.tags.map((tag: string, idx: number) => (
+                        <Badge key={`${tag}-${idx}`} variant="outline" className="text-xs bg-primary/5">
+                          {tag}
                         </Badge>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {team.location}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      Due {team.deadline}
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1">
-                    {team.tags.map((tag: string) => (
-                      <Badge key={tag} variant="outline" className="text-xs bg-primary/5">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
@@ -166,67 +225,7 @@ export function TeamsPage() {
               </Card>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Events Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
-        {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No upcoming events right now
-          </p>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-6">
-            {events.map((event) => (
-              <Card key={event.name} className="bg-gradient-card border-0 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-                <CardHeader>
-                  <CardTitle className="text-lg">{event.name}</CardTitle>
-                  <p className="text-muted-foreground">{event.description}</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium">Date</p>
-                      <p className="text-sm text-muted-foreground">{event.date}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Location</p>
-                      <p className="text-sm text-muted-foreground">{event.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Participants</p>
-                      <p className="text-sm text-muted-foreground">{event.participants} registered</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Prizes</p>
-                      <p className="text-sm text-muted-foreground">{event.prizes}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium mb-2">Skills:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {event.skills.map((skill: string) => (
-                        <Badge key={skill} variant="secondary" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="hero" className="flex-1">
-                      Register Now
-                    </Button>
-                    <Button variant="outline" className="flex-1">
-                      More Info
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        </ScrollArea>
         )}
       </div>
     </div>
