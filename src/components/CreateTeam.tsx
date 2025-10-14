@@ -25,17 +25,25 @@ export default function CreateTeamPage() {
 
     const { error } = await supabase.from("teams").insert([
       {
-        team_name: teamName,
-        created_by: user.id,
-        event_id: eventId,
-        members: [user.id],
+        name: teamName,            // ✅ matches your column "name"
+        created_by: user.id,       // ✅ exists now
+        members: [user.id],        // ✅ matches array column
+        description: "New team created via registration",
+        location: "TBD",           // optional fallback
+        deadline: null,            // optional fallback
+        skills: [],
+        neededroles: [],
+        tags: [],
+        type: "custom",
+        difficulty: "medium",
+        createdat: new Date().toISOString(), // ✅ matches your actual column spelling
       },
     ])
 
     setLoading(false)
     if (error) {
       console.error(error)
-      alert("Error creating team")
+      alert(`Error creating team: ${error.message}`)
     } else {
       alert("Team created successfully!")
       navigate("/events")
