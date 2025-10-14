@@ -1,4 +1,3 @@
-// src/components/Events.tsx
 "use client"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
@@ -15,7 +14,7 @@ type Event = {
   date: string
   location: string
   skills: string[]
-  joined_by_individuals: string[]
+  joined_by_individuals?: string[] // uuid array
 }
 
 const supabase = createClient(
@@ -30,46 +29,63 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    async function fetchEvents() {
-      setLoading(true)
-      setError(null)
-
+  // Fetch events from Supabase
+  const fetchEvents = async () => {
+    setLoading(true)
+    setError(null)
+    try {
       const { data, error } = await supabase
-        .from("events")
+        .from<Event>("events")
         .select("*")
         .order("date", { ascending: true })
 
-      if (error) {
-        console.error("Could not connect to database:", error)
-        setError("Could not connect to the database")
-      } else {
-        setEvents(data || [])
-      }
-
-      setLoading(false)
+      if (error) throw error
+      setEvents(data || [])
+    } catch (err) {
+      console.error("Could not connect to database:", err)
+      setError("Could not connect to the database")
     }
+    setLoading(false)
+  }
 
+  useEffect(() => {
     fetchEvents()
   }, [])
 
-  // Check if current user has joined the event
-  const joinedByUser = (event: Event) => {
-    if (!user) return false
-    return event.joined_by_individuals?.includes(user.id)
+  // Handle join click
+  const handleJoin = async (eventId: string) => {
+    if (!user) return alert("You must be logged in")
+    try {
+      // Add user ID to joined_by_individuals column
+      const event = events.find((e) => e.eventid === eventId)
+      if (!event) return
+
+      const updatedArray = Array.isArray(event.joined_by_individuals)
+        ? [...event.joined_by_individuals, user.id]
+        : [user.id]
+
+      const { error } = await supabase
+        .from("events")
+        .update({ joined_by_individuals: updatedArray })
+        .eq("eventid", eventId)
+
+      if (error) throw error
+
+      // Update local state so button changes immediately
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.eventid === eventId
+            ? { ...e, joined_by_individuals: updatedArray }
+            : e
+        )
+      )
+    } catch (err) {
+      console.error(err)
+      alert("Failed to join event")
+    }
   }
 
-  const handleJoin = (eventId: string) => {
-    navigate(`/registration/${eventId}`)
-  }
-
-  const handleView = (eventId: string) => {
-    navigate(`/view/${eventId}`)
-  }
-
-  if (error) {
-    return <p className="text-red-500 p-6">{error}</p>
-  }
+  if (error) return <p className="text-red-500 p-6">{error}</p>
 
   return (
     <div className="flex flex-col p-6 h-full">
@@ -85,49 +101,47 @@ export default function EventsPage() {
           ) : (
             <ScrollArea className="h-[70vh] pr-4">
               <div className="flex flex-col gap-4">
-                {events.map((event) => (
-                  <Card key={event.eventid} className="p-4 shadow-sm">
-                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-                      <div>
-                        <h2 className="text-xl font-semibold">{event.name}</h2>
-                        <p className="text-gray-600 text-sm">{event.description}</p>
-                        <p className="text-sm mt-1">
-                          📍 <span className="font-medium">{event.location}</span>
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          🗓️ {new Date(event.date).toLocaleString()}
-                        </p>
-                        {event.skills?.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {event.skills.map((skill, i) => (
-                              <span
-                                key={i}
-                                className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                {events.map((event) => {
+                  const isRegistered = event.joined_by_individuals?.includes(user?.id || "")
+                  return (
+                    <Card key={event.eventid} className="p-4 shadow-sm">
+                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                        <div>
+                          <h2 className="text-xl font-semibold">{event.name}</h2>
+                          <p className="text-gray-600 text-sm">{event.description}</p>
+                          <p className="text-sm mt-1">
+                            📍 <span className="font-medium">{event.location}</span>
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            🗓️ {new Date(event.date).toLocaleString()}
+                          </p>
+                          {event.skills?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {event.skills.map((skill, i) => (
+                                <span
+                                  key={i}
+                                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() =>
+                            isRegistered
+                              ? navigate(`/view/${event.eventid}`)
+                              : handleJoin(event.eventid)
+                          }
+                          className="w-full md:w-auto mt-2 md:mt-0"
+                        >
+                          {isRegistered ? "View" : "Join"}
+                        </Button>
                       </div>
-                      {joinedByUser(event) ? (
-                        <Button
-                          onClick={() => handleView(event.eventid)}
-                          className="w-full md:w-auto mt-2 md:mt-0"
-                        >
-                          View
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleJoin(event.eventid)}
-                          className="w-full md:w-auto mt-2 md:mt-0"
-                        >
-                          Join
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             </ScrollArea>
           )}
