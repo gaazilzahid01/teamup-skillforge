@@ -10,8 +10,8 @@ type Event = {
   description: string
   date: string
   location: string
-  joined_by_individuals?: string[]
-  joined_by_team?: string[]
+  participants?: string[]
+  joined_by_teams?: string[]
 }
 
 type Student = {
@@ -74,11 +74,11 @@ export default function ViewEventPage() {
 
         // Fetch teams
         let teamList: Team[] = []
-        if (eventData?.joined_by_team?.length) {
+        if (eventData?.joined_by_teams?.length) {
           const { data: teamsData } = await supabase
             .from("teams")
             .select("teamid,name")
-            .in("teamid", eventData.joined_by_team)
+            .in("teamid", eventData.joined_by_teams)
           teamList = teamsData || []
         }
 

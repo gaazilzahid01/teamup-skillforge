@@ -51,7 +51,7 @@ export default function EventsPage() {
 
   // 🔹 Handle join button click
   const handleJoin = (eventId: string) => {
-    navigate(`/registration/${eventId}`, { state: { onJoin: fetchEvents } })
+    navigate(`/registration/${eventId}`)
   }
 
   const handleView = (eventId: string) => {

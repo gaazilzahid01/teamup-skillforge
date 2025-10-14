@@ -1,6 +1,6 @@
 // src/components/Registration.tsx
 "use client"
-import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -10,8 +10,6 @@ import { useAuth } from "@/contexts/AuthContext"
 export default function RegistrationPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
-  const location = useLocation()
-  const onJoin = location.state?.onJoin // callback to refresh EventsPage
   const { user } = useAuth()
 
   const [loading, setLoading] = useState(false)
@@ -35,7 +33,7 @@ export default function RegistrationPage() {
     }
 
     // Check if already joined
-    const currentIndividuals = event?.joined_by_individuals || []
+    const currentIndividuals = (event as any)?.joined_by_individuals || []
     if (currentIndividuals.includes(user.id)) {
       alert("You have already joined this event")
       setLoading(false)
@@ -56,8 +54,6 @@ export default function RegistrationPage() {
       console.error(error)
       alert("Error joining as individual")
     } else {
-      // Refresh events in parent page
-      onJoin?.()
       // Navigate back to events page
       navigate("/events")
     }
