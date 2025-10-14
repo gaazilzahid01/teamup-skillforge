@@ -2,15 +2,10 @@
 "use client"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
 
 export default function RegistrationPage() {
   const { eventId } = useParams()
@@ -25,17 +20,35 @@ export default function RegistrationPage() {
     if (!user) return
     setLoading(true)
 
-    const { data, error } = await supabase
+    // Fetch current event
+    const { data: event, error: fetchError } = await supabase
+      .from("events")
+      .select("joined_by_individuals")
+      .eq("eventid", eventId)
+      .single()
+
+    if (fetchError) {
+      console.error(fetchError)
+      alert("Error fetching event")
+      setLoading(false)
+      return
+    }
+
+    // Check if already joined
+    const currentIndividuals = event?.joined_by_individuals || []
+    if (currentIndividuals.includes(user.id)) {
+      alert("You have already joined this event")
+      setLoading(false)
+      return
+    }
+
+    // Add user to the array
+    const { error } = await supabase
       .from("events")
       .update({
-        joined_by_individuals: supabase.raw(
-          "array_append(COALESCE(joined_by_individuals, '{}'), ?)",
-          [user.id]
-        ),
+        joined_by_individuals: [...currentIndividuals, user.id],
       })
       .eq("eventid", eventId)
-      .select()
-      .single()
 
     setLoading(false)
 

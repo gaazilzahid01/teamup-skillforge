@@ -1,13 +1,8 @@
 "use client"
 import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
 
 type Event = {
   eventid: string
@@ -51,14 +46,14 @@ export default function ViewEventPage() {
 
         // Fetch event
         const { data: eventData, error: eventError } = await supabase
-          .from<Event>("events")
+          .from("events")
           .select("*")
           .eq("eventid", eventId)
           .single()
         if (eventError) throw eventError
 
         // Fetch colleges (needed only for individuals)
-        const { data: collegesData } = await supabase.from<College>("colleges").select("*")
+        const { data: collegesData } = await supabase.from("colleges").select("*")
         const collegesMap: Record<string, string> = {}
         collegesData?.forEach((c) => {
           collegesMap[c.collegeid] = c.name
@@ -68,7 +63,7 @@ export default function ViewEventPage() {
         let individualList: { name: string; college: string }[] = []
         if (eventData?.joined_by_individuals?.length) {
           const { data: students } = await supabase
-            .from<Student>("studentdetails")
+            .from("studentdetails")
             .select("userid,name,collegeid")
             .in("userid", eventData.joined_by_individuals)
           individualList = students?.map((s) => ({
@@ -81,7 +76,7 @@ export default function ViewEventPage() {
         let teamList: Team[] = []
         if (eventData?.joined_by_team?.length) {
           const { data: teamsData } = await supabase
-            .from<Team>("teams")
+            .from("teams")
             .select("teamid,name")
             .in("teamid", eventData.joined_by_team)
           teamList = teamsData || []

@@ -2,7 +2,7 @@
 "use client"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -18,11 +18,6 @@ type Event = {
   joined_by_individuals: string[]
   joined_by_teams: string[]
 }
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
 
 export default function EventsPage() {
   const { user } = useAuth()
