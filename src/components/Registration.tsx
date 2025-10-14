@@ -1,6 +1,6 @@
 // src/components/Registration.tsx
 "use client"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -14,34 +14,43 @@ const supabase = createClient(
 
 export default function RegistrationPage() {
   const { eventId } = useParams()
-  const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const onJoin = location.state?.onJoin // callback to refresh EventsPage
+  const { user } = useAuth()
+
   const [loading, setLoading] = useState(false)
 
-  const handleIndividualJoin = async () => {
+  const joinAsIndividual = async () => {
     if (!user) return
     setLoading(true)
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("events")
       .update({
         joined_by_individuals: supabase.raw(
-          "array_append(joined_by_individuals, ?)",
+          "array_append(COALESCE(joined_by_individuals, '{}'), ?)",
           [user.id]
         ),
       })
       .eq("eventid", eventId)
+      .select()
+      .single()
 
     setLoading(false)
+
     if (error) {
       console.error(error)
-      alert("Failed to join event")
+      alert("Error joining as individual")
     } else {
-      navigate("/events") // go back to events page
+      // Refresh events in parent page
+      onJoin?.()
+      // Navigate back to events page
+      navigate("/events")
     }
   }
 
-  const handleTeamJoin = () => {
+  const joinAsTeam = () => {
     navigate(`/teamregister/${eventId}`)
   }
 
@@ -50,23 +59,26 @@ export default function RegistrationPage() {
       <Card className="w-full max-w-md shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold text-center">
-            Register for Event
+            Join Event
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button
-            onClick={handleIndividualJoin}
+            onClick={joinAsIndividual}
             disabled={loading}
             className="w-full"
           >
             {loading ? "Registering..." : "Join as Individual"}
           </Button>
+
           <Button
-            onClick={handleTeamJoin}
+            onClick={joinAsTeam}
             className="w-full"
+            variant="secondary"
           >
             Join as Team
           </Button>
+
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
