@@ -18,6 +18,8 @@ import RegistrationPage from "./components/Registration"
 import TeamRegisterPage from "./components/TeamRegister"
 import CreateTeamPage from "./components/CreateTeam"
 import JoinTeamPage from "./components/JoinTeam"
+import ViewEventPage from "./components/View"
+
 
 
 
