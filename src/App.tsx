@@ -52,6 +52,8 @@ const App = () => (
               <Route path="/teamregister/:eventId" element={<TeamRegisterPage />} />
               <Route path="/createteam/:eventId" element={<CreateTeamPage />} />
               <Route path="/jointeam/:eventId" element={<JoinTeamPage />} />
+              <Route path="/view/:eventId" element={<ViewEventPage />} />
+
 
 
 
