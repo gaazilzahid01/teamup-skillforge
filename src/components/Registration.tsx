@@ -1,6 +1,7 @@
+// src/components/Registration.tsx
 "use client"
 import { useParams, useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,90 +17,62 @@ export default function RegistrationPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [event, setEvent] = useState<any>(null)
 
-  // Fetch event details
-  useEffect(() => {
-    async function fetchEvent() {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("eventid", eventId)
-        .single()
-      if (!error) setEvent(data)
-    }
-    fetchEvent()
-  }, [eventId])
-
-  const handleJoinAsIndividual = async () => {
-    if (!user || !eventId) return
+  const handleIndividualJoin = async () => {
+    if (!user) return
     setLoading(true)
 
-    const { data: eventData, error: fetchError } = await supabase
+    const { error } = await supabase
       .from("events")
-      .select("joined_by_individuals")
+      .update({
+        joined_by_individuals: supabase.raw(
+          "array_append(joined_by_individuals, ?)",
+          [user.id]
+        ),
+      })
       .eq("eventid", eventId)
-      .single()
-
-    if (fetchError) {
-      console.error(fetchError)
-      setLoading(false)
-      return
-    }
-
-    const updatedList = Array.isArray(eventData.joined_by_individuals)
-      ? [...new Set([...eventData.joined_by_individuals, user.id])]
-      : [user.id]
-
-    const { error: updateError } = await supabase
-      .from("events")
-      .update({ joined_by_individuals: updatedList })
-      .eq("eventid", eventId)
-
-    if (updateError) console.error(updateError)
 
     setLoading(false)
-    navigate("/events")
+    if (error) {
+      console.error(error)
+      alert("Failed to join event")
+    } else {
+      navigate("/events") // go back to events page
+    }
   }
 
-  const handleJoinAsTeam = () => {
+  const handleTeamJoin = () => {
     navigate(`/teamregister/${eventId}`)
   }
-
-  if (!event)
-    return <p className="p-6 text-gray-500">Loading event details...</p>
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       <Card className="w-full max-w-md shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold text-center">
-            Register for {event.name}
+            Register for Event
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button
+            onClick={handleIndividualJoin}
             disabled={loading}
-            onClick={handleJoinAsIndividual}
             className="w-full"
           >
             {loading ? "Registering..." : "Join as Individual"}
           </Button>
-
           <Button
-            variant="outline"
-            onClick={handleJoinAsTeam}
+            onClick={handleTeamJoin}
             className="w-full"
           >
             Join as Team
           </Button>
-
           <Button
             variant="ghost"
-            onClick={() => navigate("/events")}
-            className="w-full text-gray-500 mt-2"
+            onClick={() => navigate(-1)}
+            className="w-full text-gray-500"
           >
-            Back to Events
+            Back
           </Button>
         </CardContent>
       </Card>
