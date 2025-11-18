@@ -6,41 +6,89 @@ import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
 export default function RegistrationPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
 
   const joinAsIndividual = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to join this event",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     // Fetch current event
     const { data: event, error: fetchError } = await supabase
       .from("events")
-      .select("joined_by_individuals")
+      .select("joined_by_individuals, max_participants, registration_deadline, status")
       .eq("eventid", eventId)
       .single()
 
     if (fetchError) {
-      console.error(fetchError)
-      alert("Error fetching event")
+      toast({
+        title: "Error",
+        description: "Event not found",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    // Validate registration eligibility
+    if (event.status !== 'open') {
+      toast({
+        title: "Registration closed",
+        description: "Event registration is no longer open",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    if (event.registration_deadline && new Date(event.registration_deadline) < new Date()) {
+      toast({
+        title: "Deadline passed",
+        description: "Registration deadline has passed",
+        variant: "destructive",
+      })
       setLoading(false)
       return
     }
 
     // Check if already joined
-    const currentIndividuals = (event as any)?.joined_by_individuals || []
+    const currentIndividuals = event.joined_by_individuals || []
     if (currentIndividuals.includes(user.id)) {
-      alert("You have already joined this event")
+      toast({
+        title: "Already registered",
+        description: "You have already joined this event",
+        variant: "destructive",
+      })
       setLoading(false)
       return
     }
 
-    // Add user to the array
+    // Check capacity
+    if (event.max_participants && currentIndividuals.length >= event.max_participants) {
+      toast({
+        title: "Event full",
+        description: "This event has reached maximum capacity",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    // Add user to the event
     const { error } = await supabase
       .from("events")
       .update({
@@ -51,10 +99,16 @@ export default function RegistrationPage() {
     setLoading(false)
 
     if (error) {
-      console.error(error)
-      alert("Error joining as individual")
+      toast({
+        title: "Error",
+        description: "Failed to join event",
+        variant: "destructive",
+      })
     } else {
-      // Navigate back to events page
+      toast({
+        title: "Success!",
+        description: "Successfully joined the event",
+      })
       navigate("/events")
     }
   }

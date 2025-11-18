@@ -1,51 +1,83 @@
 "use client"
 import { useParams, useNavigate } from "react-router-dom"
 import { useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { z } from "zod"
+import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
+const teamSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(3, "Team name must be at least 3 characters")
+    .max(100, "Team name must be less than 100 characters")
+    .regex(/^[a-zA-Z0-9\s-_]+$/, "Team name can only contain letters, numbers, spaces, hyphens, and underscores"),
+})
 
 export default function CreateTeamPage() {
   const { eventId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [teamName, setTeamName] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleCreate = async () => {
-    if (!user || !teamName.trim()) return
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a team",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate input
+    const validation = teamSchema.safeParse({ name: teamName })
+    if (!validation.success) {
+      toast({
+        title: "Invalid team name",
+        description: validation.error.issues[0].message,
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     const { error } = await supabase.from("teams").insert([
       {
-        name: teamName,            // ✅ matches your column "name"
-        created_by: user.id,       // ✅ exists now
-        members: [user.id],        // ✅ matches array column
+        name: validation.data.name,
+        created_by: user.id,
+        members: [user.id],
         description: "New team created via registration",
-        location: "TBD",           // optional fallback
-        deadline: null,            // optional fallback
+        location: "TBD",
+        deadline: null,
         skills: [],
         neededroles: [],
         tags: [],
         type: "custom",
         difficulty: "medium",
-        createdat: new Date().toISOString(), // ✅ matches your actual column spelling
+        event_id: eventId,
+        createdat: new Date().toISOString(),
       },
     ])
 
     setLoading(false)
     if (error) {
-      console.error(error)
-      alert(`Error creating team: ${error.message}`)
+      toast({
+        title: "Error creating team",
+        description: error.message,
+        variant: "destructive",
+      })
     } else {
-      alert("Team created successfully!")
+      toast({
+        title: "Success!",
+        description: "Team created successfully",
+      })
       navigate("/events")
     }
   }

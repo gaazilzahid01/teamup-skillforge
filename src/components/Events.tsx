@@ -14,7 +14,6 @@ type Event = {
   description: string
   date: string
   location: string
-  skills: string[]
   joined_by_individuals: string[]
   joined_by_teams: string[]
 }
@@ -32,7 +31,7 @@ export default function EventsPage() {
 
     const { data, error } = await supabase
       .from("events")
-      .select("eventid, name, description, date, location, skills, joined_by_individuals, joined_by_teams")
+      .select("eventid, name, description, date, location, joined_by_individuals, joined_by_teams")
       .order("date", { ascending: true })
 
     if (error) {
@@ -91,18 +90,6 @@ export default function EventsPage() {
                           <p className="text-sm text-gray-500">
                             🗓️ {new Date(event.date).toLocaleString()}
                           </p>
-                          {event.skills?.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {event.skills.map((skill, i) => (
-                                <span
-                                  key={i}
-                                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-                                >
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                         {isJoined ? (
                           <Button

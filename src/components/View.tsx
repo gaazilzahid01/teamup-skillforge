@@ -56,7 +56,7 @@ export default function ViewEventPage() {
         const { data: collegesData } = await supabase.from("colleges").select("*")
         const collegesMap: Record<string, string> = {}
         collegesData?.forEach((c) => {
-          collegesMap[c.collegeid] = c.name
+          collegesMap[c.id] = c.name
         })
 
         // Fetch individuals
@@ -64,11 +64,11 @@ export default function ViewEventPage() {
         if (eventData?.joined_by_individuals?.length) {
           const { data: students } = await supabase
             .from("studentdetails")
-            .select("userid,name,collegeid")
-            .in("userid", eventData.joined_by_individuals)
+            .select("user_id,name,college_id")
+            .in("user_id", eventData.joined_by_individuals)
           individualList = students?.map((s) => ({
             name: s.name,
-            college: collegesMap[s.collegeid] || "Unknown College",
+            college: collegesMap[s.college_id] || "Unknown College",
           })) || []
         }
 
@@ -77,9 +77,9 @@ export default function ViewEventPage() {
         if (eventData?.joined_by_teams?.length) {
           const { data: teamsData } = await supabase
             .from("teams")
-            .select("teamid,name")
-            .in("teamid", eventData.joined_by_teams)
-          teamList = teamsData || []
+            .select("id,name")
+            .in("id", eventData.joined_by_teams)
+          teamList = teamsData?.map((t) => ({ teamid: t.id, name: t.name })) || []
         }
 
         setEvent(eventData)

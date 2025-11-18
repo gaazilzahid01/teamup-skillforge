@@ -1,19 +1,15 @@
 "use client"
 import { useParams, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/integrations/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
+import { useToast } from "@/hooks/use-toast"
 
 type Team = {
   id: string
-  team_name: string
+  name: string
   members: string[]
   event_id: string
 }
@@ -22,6 +18,7 @@ export default function JoinTeamPage() {
   const { eventId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,30 +26,61 @@ export default function JoinTeamPage() {
     async function fetchTeams() {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, team_name, members, event_id")
+        .select("id, name, members, event_id")
         .eq("event_id", eventId)
 
-      if (!error && data) setTeams(data)
+      if (error) {
+        toast({
+          title: "Error loading teams",
+          description: error.message,
+          variant: "destructive",
+        })
+      } else if (data) {
+        setTeams(data)
+      }
       setLoading(false)
     }
 
     fetchTeams()
-  }, [eventId])
+  }, [eventId, toast])
 
   const handleJoinTeam = async (teamId: string, members: string[]) => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to join a team",
+        variant: "destructive",
+      })
+      return
+    }
 
-    const updatedMembers = [...new Set([...members, user.id])]
+    // Check if user is already a member
+    if (members.includes(user.id)) {
+      toast({
+        title: "Already a member",
+        description: "You are already part of this team",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const updatedMembers = [...members, user.id]
     const { error } = await supabase
       .from("teams")
       .update({ members: updatedMembers })
       .eq("id", teamId)
 
     if (error) {
-      console.error(error)
-      alert("Failed to join team")
+      toast({
+        title: "Error joining team",
+        description: error.message,
+        variant: "destructive",
+      })
     } else {
-      alert("Joined team successfully!")
+      toast({
+        title: "Success!",
+        description: "Joined team successfully",
+      })
       navigate("/events")
     }
   }
@@ -74,7 +102,7 @@ export default function JoinTeamPage() {
           ) : (
             teams.map((team) => (
               <Card key={team.id} className="p-4 flex justify-between items-center">
-                <span>{team.team_name}</span>
+                <span>{team.name}</span>
                 <Button onClick={() => handleJoinTeam(team.id, team.members)}>
                   Join
                 </Button>
