@@ -81,7 +81,7 @@ export function ProfilePage() {
       const { data, error } = await supabase
         .from('studentdetails')
         .select('*')
-        .eq('userid', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
@@ -90,8 +90,8 @@ export function ProfilePage() {
         setProfile(data);
         setFormData({
           name: data.name || "",
-          skills: data.skills || [],
-          collegeid: data.collegeid || "",
+          skills: [], // skills not in studentdetails schema
+          collegeid: data.college_id || "",
         });
       }
     } catch (error) {
@@ -121,26 +121,25 @@ export function ProfilePage() {
       setLoading(true);
 
       const profileData = {
-        userid: user.id,
+        user_id: user.id,
         name: formData.name,
-        skills: formData.skills,
-        collegeid: formData.collegeid || null,
-        updatedat: new Date().toISOString(),
+        email: user.email || "",
+        college_id: formData.collegeid || null,
       };
 
       if (profile) {
         // Update existing profile
         const { error } = await supabase
           .from('studentdetails')
-          .update(profileData)
-          .eq('userid', user.id);
+          .update({ name: profileData.name, college_id: profileData.college_id })
+          .eq('user_id', user.id);
 
         if (error) throw error;
       } else {
         // Create new profile
         const { error } = await supabase
           .from('studentdetails')
-          .insert({ ...profileData, createdat: new Date().toISOString() });
+          .insert(profileData);
 
         if (error) throw error;
       }
